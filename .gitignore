@@ -1,0 +1,23 @@
+# User-specific files
+*.user
+*.userosscache
+*.suo
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio Code settings
+.vscode/
+
+# Rider settings
+.idea/
+
+# Mac files
+.DS_Store
+
+# Environment-specific settings
+appsettings.Development.json
+Properties/launchSettings.json
+project.csproj.user
+project.http
