@@ -79,21 +79,23 @@ namespace project.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PutTodoItem(long id, TodoItem todoItem)
+        public async Task<IActionResult> PutTodoItem(long id, EditTodoItemDto dto)
         {
             try
             {
-                if (id != todoItem.Id)
-                {
-                    return BadRequest();
-                }
-
-                var result = await _todoService.UpdateAsync(todoItem);
-                if (!result)
+                var existingItem = await _todoService.GetByIdAsync(id);
+                if (existingItem == null)
                 {
                     return NotFound();
                 }
+                existingItem.Title = dto.Title ?? existingItem.Title;
+                existingItem.Status = dto.Status;
 
+                var result = await _todoService.UpdateAsync(existingItem);
+                if(!result)
+                {
+                    return StatusCode(500, "Failed to update the todo item");
+                }
                 return NoContent();
             }
             catch (Exception ex)
