@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using project.DTOs;
 using project.Models;
 using project.Services;
 
@@ -9,71 +10,118 @@ namespace project.Controllers
     public class TodoItemsController : ControllerBase
     {
         private readonly ITodoService _todoService;
+        private readonly ILogger<TodoItemsController> _logger;
 
-        public TodoItemsController(ITodoService todoService)
+        public TodoItemsController(ITodoService todoService, ILogger<TodoItemsController> logger)
         {
             _todoService = todoService;
+            _logger = logger;
         }
 
-        // GET: api/TodoItems
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItems()
         {
-            var todoItems = await _todoService.GetAllAsync();
-            return Ok(todoItems); // Return OkObjectResult for a collection
+            try
+            {
+                var todoItems = await _todoService.GetAllAsync();
+                return Ok(todoItems); 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving todo items");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // GET: api/TodoItems/5
         [HttpGet("{id}")]
         public async Task<ActionResult<TodoItem>> GetTodoItem(long id)
         {
-            var todoItem = await _todoService.GetByIdAsync(id);
-
-            if (todoItem == null)
+            try
             {
-                return NotFound();
+                var todoItem = await _todoService.GetByIdAsync(id);
+
+                if (todoItem == null)
+                {
+                    return NotFound();
+                }
+
+                return todoItem;
             }
-
-            return todoItem;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving todo item with id {Id}", id);
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // POST: api/TodoItems
         [HttpPost]
-        public async Task<ActionResult<TodoItem>> PostTodoItem(TodoItem todoItem)
+        public async Task<ActionResult<TodoItem>> PostTodoItem(CreateTodoItemDto dto)
         {
-            var createdItem = await _todoService.AddAsync(todoItem);
-            return CreatedAtAction(nameof(GetTodoItem), new { id = createdItem.Id }, createdItem);
+            try
+            {
+                var todoItem = new TodoItem
+                {
+                    Title = dto.Title ?? string.Empty,
+                    Status = dto.Status
+                };
+                var createdItem = await _todoService.AddAsync(todoItem);
+                return CreatedAtAction(
+                    actionName: nameof(GetTodoItem),
+                    routeValues: new { id = createdItem.Id },
+                    value: createdItem
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating new todo item");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // PUT: api/TodoItems/5
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public async Task<IActionResult> PutTodoItem(long id, TodoItem todoItem)
         {
-            if (id != todoItem.Id)
+            try
             {
-                return BadRequest();
-            }
+                if (id != todoItem.Id)
+                {
+                    return BadRequest();
+                }
 
-            var result = await _todoService.UpdateAsync(todoItem);
-            if (!result)
+                var result = await _todoService.UpdateAsync(todoItem);
+                if (!result)
+                {
+                    return NotFound();
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
             {
-                return NotFound(); // Or handle concurrency error specifically if needed
+                _logger.LogError(ex, "Error updating todo item with id {Id}", id);
+                return StatusCode(500, "Internal server error");
             }
-
-            return NoContent();
         }
 
         // DELETE: api/TodoItems/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTodoItem(long id)
         {
-            var result = await _todoService.DeleteAsync(id);
-            if (!result)
+            try
             {
-                return NotFound();
-            }
+                var result = await _todoService.DeleteAsync(id);
+                if (!result)
+                {
+                    return NotFound();
+                }
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting todo item with id {Id}", id);
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

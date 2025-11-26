@@ -1,9 +1,22 @@
-﻿namespace project.Models
+﻿using project.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace project.Models
 {
+    [Table("TodoItem")]
     public class TodoItem
     {
-        public long Id { get; set; }
+        [Key]
+        [Column("Id")]
+        public int Id { get; set; }
+
+        [Required]
+        [Column("Title")]
         public string Title { get; set; } = string.Empty;
-        public bool IsCompleted { get; set; }
+
+        [Column("Status")]
+        public TodoStatus Status { get; set; }
+
     }
 }

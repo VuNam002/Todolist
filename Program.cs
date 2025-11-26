@@ -39,14 +39,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// --- Cấu hình Middleware ---
 
 // Cấu hình cho môi trường Phát triển (Development)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    // Thêm các công cụ debug/phát triển khác ở đây
 }
 
 // Sử dụng CORS (ĐẶT TRƯỚC MapControllers)
