@@ -11,12 +11,14 @@ namespace project.Models
         [Column("Id")]
         public int Id { get; set; }
 
-        [Required]
         [Column("Title")]
         public string Title { get; set; } = string.Empty;
 
         [Column("Status")]
         public TodoStatus Status { get; set; }
+
+        [Column("Describe")]
+        public string? Describe { get; set; }
 
     }
 }

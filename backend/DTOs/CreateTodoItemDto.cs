@@ -6,5 +6,6 @@ namespace project.DTOs
     {
         public string? Title { get; set; }
         public TodoStatus Status { get; set; }
+        public string? Describe { get; set; }
     }
 }

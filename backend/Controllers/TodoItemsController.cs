@@ -34,7 +34,7 @@ namespace project.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<TodoItem>> GetTodoItem(long id)
+        public async Task<ActionResult<TodoItem>> GetTodoItem(int id)
         {
             try
             {
@@ -62,7 +62,8 @@ namespace project.Controllers
                 var todoItem = new TodoItem
                 {
                     Title = dto.Title ?? string.Empty,
-                    Status = dto.Status
+                    Status = dto.Status,
+                    Describe = dto.Describe 
                 };
                 var createdItem = await _todoService.AddAsync(todoItem);
                 return CreatedAtAction(
@@ -79,7 +80,7 @@ namespace project.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PutTodoItem(long id, EditTodoItemDto dto)
+        public async Task<IActionResult> PutTodoItem(int id, EditTodoItemDto dto)
         {
             try
             {
@@ -88,8 +89,15 @@ namespace project.Controllers
                 {
                     return NotFound();
                 }
+
                 existingItem.Title = dto.Title ?? existingItem.Title;
-                existingItem.Status = dto.Status;
+                existingItem.Describe = dto.Describe ?? existingItem.Describe;
+
+
+                if (dto.Status.HasValue)
+                {
+                    existingItem.Status = dto.Status.Value;
+                }
 
                 var result = await _todoService.UpdateAsync(existingItem);
                 if(!result)
@@ -107,7 +115,7 @@ namespace project.Controllers
 
         // DELETE: api/TodoItems/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTodoItem(long id)
+        public async Task<IActionResult> DeleteTodoItem(int id)
         {
             try
             {
@@ -123,24 +131,6 @@ namespace project.Controllers
             {
                 _logger.LogError(ex, "Error deleting todo item with id {Id}", id);
                 return StatusCode(500, "Internal server error");
-            }
-        }
-        //Cap nhat trang thai san pham
-        [HttpPatch("{id}/status")]
-        public async Task<IActionResult> UpdateStatusTodo(long id, [FromBody] string status)
-        {
-            try
-            {
-                var item = await _todoService.UpdateStatusTodo(id, status);
-                if( item == null)
-                {
-                    return NotFound($"Khong tim thay cong viec voi ID: {id}");
-                }
-                return Ok(item);
-            } catch (Exception ex)
-            {
-                _logger.LogError(ex, $"khong tim thay cong viec voi ID: {id}");
-                return StatusCode(500, "Da co loi xay ra khi cap nhat trang thai don hang");
             }
         }
     }
