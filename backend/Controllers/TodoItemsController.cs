@@ -125,5 +125,23 @@ namespace project.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        //Cap nhat trang thai san pham
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatusTodo(long id, [FromBody] string status)
+        {
+            try
+            {
+                var item = await _todoService.UpdateStatusTodo(id, status);
+                if( item == null)
+                {
+                    return NotFound($"Khong tim thay cong viec voi ID: {id}");
+                }
+                return Ok(item);
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, $"khong tim thay cong viec voi ID: {id}");
+                return StatusCode(500, "Da co loi xay ra khi cap nhat trang thai don hang");
+            }
+        }
     }
 }

@@ -9,5 +9,6 @@ namespace project.Services
         Task<TodoItem> AddAsync(TodoItem item);
         Task<bool> UpdateAsync(TodoItem item);
         Task<bool> DeleteAsync(long id);
+        Task<bool> UpdateStatusTodo(long id, string newStatus);
     }
 }

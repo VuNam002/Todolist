@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using project.Data;
 using project.Models;
+using project.Enums;
 
 namespace project.Services
 {
@@ -103,10 +104,35 @@ namespace project.Services
             }
         }
 
+        public async Task<bool> UpdateStatusTodo(long id, string newStatus)
+        {
+            try
+            {
+                var item = await _context.TodoItems.FindAsync((int)id);
+                if (item == null) return false;
+                if (Enum.TryParse<TodoStatus>(newStatus, true, out var statusEnum))
+                {
+                    item.Status = statusEnum; 
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"Error: Invalid status value provided: {newStatus}. Must be one of: Pending, InProgress, Completed.");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating TodoItem status: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<bool> DeleteAsync(long id)
         {
-            // Call the existing int overload for compatibility
             return await DeleteAsync((int)id);
         }
+
     }
 }
