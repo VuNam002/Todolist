@@ -5,15 +5,13 @@ import {
   TodoItem,
   fetchItemCreate,
   fetchTodoItemDelete,
-  fetchTodoItemStatus,
-  fetchItemEdit,
+  fetchItemPatch,
 } from "../lib/api";
 import { toast } from "react-toastify";
-// Import các icon cần thiết
 import { PiCheckCircleDuotone, PiHourglassDuotone, PiWrenchDuotone, PiPencilSimple, PiTrashSimple, PiEye } from "react-icons/pi";
 import { FaSave, FaTimes } from "react-icons/fa";
 
-// Enum giống backend
+// Enum 
 enum TodoStatus {
   Pending = 0,
   InProgress = 1,
@@ -24,8 +22,10 @@ const TodoList: React.FC = () => {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [newTodoTitle, setNewTodoTitle] = useState("");
+  const [newTodoDescribe, setNewTodoDescribe] = useState(""); 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingDescribe, setEditingDescribe] = useState(""); 
 
   const loadTodos = async () => {
     setLoading(true);
@@ -50,11 +50,13 @@ const TodoList: React.FC = () => {
 
     const newItem = await fetchItemCreate({
       title: newTodoTitle,
+      describe: newTodoDescribe, 
       status: TodoStatus.Pending,
     });
     if (newItem) {
       setTodos([...todos, newItem]);
       setNewTodoTitle("");
+      setNewTodoDescribe(""); 
       toast.success("Đã thêm công việc mới!");
     } else {
       toast.error("Không thể thêm công việc!");
@@ -82,17 +84,13 @@ const TodoList: React.FC = () => {
       nextStatus = TodoStatus.Pending;
     }
 
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, status: nextStatus } : todo
-      )
-    );
-
-    const result = await fetchTodoItemStatus(id, nextStatus);
+    const originalTodo = todos.find(t => t.id === id);
+    if (!originalTodo) return;
+    setTodos(todos.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
+    const result = await fetchItemPatch(id, { status: nextStatus }); 
     
     if (result) {
-      // Không cần cập nhật lại vì optimistic update đã chạy
-      
+      setTodos(todos.map((t) => (t.id === id ? result : t)));
       if (nextStatus === TodoStatus.InProgress) {
         toast.success("Đã chuyển sang Đang làm!");
       } else if (nextStatus === TodoStatus.Completed) {
@@ -101,28 +99,32 @@ const TodoList: React.FC = () => {
         toast.success("Đã chuyển về Chờ xử lý!");
       }
     } else {
-      setTodos(
-        todos.map((todo) =>
-          todo.id === id ? { ...todo, status: currentStatus } : todo
-        )
-      );
-      toast.error("Không thể cập nhật trạng thái!");
+      setTodos(todos.map((t) => (t.id === id ? originalTodo : t))); 
+      toast.error("Không thể cập nhật trạng thái!"); 
     }
   };
 
-  const handleEditStart = (id: number, title: string) => {
+  const handleEditStart = (id: number, title: string, describe: string) => {
     setEditingId(id);
     setEditingTitle(title);
+    setEditingDescribe(describe); 
   };
 
   const handleEditSave = async (id: number) => {
     if (!editingTitle.trim()) return;
 
-    const updatedItem = await fetchItemEdit(id, editingTitle);
+    const originalTodo = todos.find(t => t.id === id);
+    if (!originalTodo) return;
+    const updatedItem = await fetchItemPatch(id, { 
+        title: editingTitle,
+        describe: editingDescribe 
+    });
+
     if (updatedItem) {
       setTodos(todos.map((todo) => (todo.id === id ? updatedItem : todo)));
       setEditingId(null);
       setEditingTitle("");
+      setEditingDescribe("");
       toast.success("Đã cập nhật công việc!");
     } else {
       toast.error("Không thể cập nhật công việc!");
@@ -132,6 +134,7 @@ const TodoList: React.FC = () => {
   const handleEditCancel = () => {
     setEditingId(null);
     setEditingTitle("");
+    setEditingDescribe("");
   };
 
   const getStatusInfo = (status: number): { label: string, color: string, icon: React.ReactNode } => {
@@ -169,20 +172,29 @@ const TodoList: React.FC = () => {
 
   return (
     <div className="bg-white shadow-lg rounded-lg p-6 w-full">
-      <form onSubmit={handleCreateTodo} className="flex gap-2 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-          <input
-              type="text"
-              value={newTodoTitle}
-              onChange={(e) => setNewTodoTitle(e.target.value)}
-              placeholder="Nhập tên công việc mới..."
-              className="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      <form onSubmit={handleCreateTodo} className="space-y-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+          <div className="flex gap-2">
+            <input
+                type="text"
+                value={newTodoTitle}
+                onChange={(e) => setNewTodoTitle(e.target.value)}
+                placeholder="Nhập tên công việc mới..."
+                className="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-950"
+            />
+            <button
+                type="submit"
+                className="bg-black text-white px-6 py-3 font-semibold  hover:bg-black transition-colors"
+            >
+                + Thêm
+            </button>
+          </div>
+          <textarea
+              value={newTodoDescribe}
+              onChange={(e) => setNewTodoDescribe(e.target.value)}
+              placeholder="Thêm mô tả (tùy chọn)..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-950"
+              rows={2}
           />
-          <button
-              type="submit"
-              className="bg-indigo-600 text-white px-6 py-3 font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-              + Thêm
-          </button>
       </form>
 
       {todos.length === 0 ? (
@@ -192,9 +204,9 @@ const TodoList: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên công việc</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mô tả</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
@@ -203,18 +215,13 @@ const TodoList: React.FC = () => {
                 const statusInfo = getStatusInfo(todo.status);
                 return (
                   <tr key={todo.id} className="hover:bg-gray-50">
-                    
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                      #{todo.id}
-                    </td>
-
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {editingId === todo.id ? (
                         <input
                           type="text"
                           value={editingTitle}
                           onChange={(e) => setEditingTitle(e.target.value)}
-                          className="p-1 border border-indigo-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+                          className="p-1 border border-indigo-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-950 w-full"
                           autoFocus
                         />
                       ) : (
@@ -238,6 +245,21 @@ const TodoList: React.FC = () => {
                       </button>
                     </td>
 
+                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs overflow-hidden text-ellipsis">
+                      {editingId === todo.id ? (
+                        <textarea
+                          value={editingDescribe}
+                          onChange={(e) => setEditingDescribe(e.target.value)}
+                          className="p-1 border border-indigo-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-950 w-full resize-none"
+                          rows={2}
+                        />
+                      ) : (
+                        <span className="truncate block" title={todo.describe}>
+                          {todo.describe || "Không có mô tả"} 
+                        </span>
+                      )}
+                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       {editingId === todo.id ? (
                         <div className="flex justify-center space-x-2">
@@ -259,17 +281,11 @@ const TodoList: React.FC = () => {
                       ) : (
                         <div className="flex justify-center space-x-2">
                           <button
-                            onClick={() => handleEditStart(todo.id, todo.title)}
+                            onClick={() => handleEditStart(todo.id, todo.title, todo.describe)}
                             className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-100"
                             title="Sửa"
                           >
                             <PiPencilSimple className="text-lg" />
-                          </button>
-                          <button
-                            className="text-indigo-600 hover:text-indigo-800 p-2 rounded-full hover:bg-indigo-100"
-                            title="Xem chi tiết (Không có logic)"
-                          >
-                            <PiEye className="text-lg" />
                           </button>
                           <button
                             onClick={() => handleDeleteTodo(todo.id)}

@@ -3,7 +3,8 @@ const API_URL = 'https://localhost:51666/api';
 export interface TodoItem {
     id: number;
     title: string;
-    status: number;  // Đổi từ boolean sang number để khớp với enum
+    status: number; 
+    describe: string;
 }
 
 export async function fetchTodoItems(): Promise<TodoItem[]> {
@@ -57,20 +58,19 @@ export async function fetchTodoItemDelete(id: number): Promise<boolean> {
     }
 }
 
-export async function fetchTodoItemStatus(id: number, status: number): Promise<TodoItem | null> {
+export async function fetchItemPatch(id: number, patchData: { [key: string]: any }): Promise<TodoItem | null> {
     try {
         const res = await fetch(`${API_URL}/TodoItems/${id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            // Gửi một đối tượng JSON đơn giản thay vì JSON Patch
-            body: JSON.stringify({ status: status }),
+            body: JSON.stringify(patchData),
         });
         
         if (!res.ok) {
             const errorText = await res.text();
-            console.error('Update status failed:', errorText);
+            console.error('Patch failed:', errorText);
             return null;
         }
         
@@ -81,38 +81,12 @@ export async function fetchTodoItemStatus(id: number, status: number): Promise<T
         
         return await fetchTodoItemById(id);
     } catch (error) {
-        console.error('Error updating status:', error);
+        console.error('Error patching item:', error);
         return null;
     }
 }
 
-export async function fetchItemEdit(id: number, title: string): Promise<TodoItem | null> {
-    try {
-        const res = await fetch(`${API_URL}/TodoItems/${id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            // Gửi một đối tượng JSON đơn giản thay vì JSON Patch
-            body: JSON.stringify({ title: title })
-        });
-        if (!res.ok) {
-            return null;
-        }
-        
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-            return await res.json();
-        }
-        
-        return await fetchTodoItemById(id);
-    } catch (error) {
-        console.error('Error editing todo item:', error);
-        return null;
-    }
-}
-
-export async function fetchItemCreate(newItem: { title: string; status: number }): Promise<TodoItem | null> {
+export async function fetchItemCreate(newItem: { title: string; describe: string; status: number }): Promise<TodoItem | null> {
     try {
         const res = await fetch(`${API_URL}/TodoItems`, {
             method: 'POST',
@@ -121,7 +95,8 @@ export async function fetchItemCreate(newItem: { title: string; status: number }
             },
             body: JSON.stringify({
                 title: newItem.title,
-                status: newItem.status  
+                status: newItem.status,
+                describe: newItem.describe
             })
         });
         
